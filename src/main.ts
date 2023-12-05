@@ -1,11 +1,24 @@
-import { graphql  } from "@octokit/graphql";
+import { graphql } from "@octokit/graphql";
 import { config } from "dotenv";
 import { Client } from "@notionhq/client";
 import { openIssue, prepareDB, setLabels } from "./notion";
 
 config();
-export const pageId = process.env.NOTION_PAGE_ID!;
-const apiKey = process.env.NOTION_API_KEY!;
+const ghTokenTmp = process.env.GITHUB_API_TOKEN;
+if (!ghTokenTmp) {
+    throw new Error("Please add a Github access token to your .env file");
+}
+const ghToken = ghTokenTmp!;
+const pageIdTmp = process.env.NOTION_PAGE_ID;
+if (!pageIdTmp) {
+    throw new Error("Please add a pageId to your .env file");
+}
+export const pageId = pageIdTmp!;
+const apiKeyTmp = process.env.NOTION_API_KEY!;
+if (!apiKeyTmp) {
+    throw new Error("Please add a notion API key to your .env file");
+}
+const apiKey = apiKeyTmp!;
 export const labelPropName = process.env.GH_LABEL_PROP_NAME ?? "Github Labels";
 export const linkPropName = process.env.GH_LINK_PROP_NAME ?? "Github Link";
 export const repoPropName = process.env.GH_LABEL_PROP_NAME ?? "Repository";
@@ -40,7 +53,13 @@ export type Issue = {
 
 export async function run(): Promise<void> {
     const repoOwner = process.argv[2];
+    if (!repoOwner) {
+        throw new Error("Please enter your github repo's owner");
+    }
     const repoName = process.argv[3];
+    if (!repoName) {
+        throw new Error("Please enter your github repo's name");
+    }
 
     const notionClient = new Client({ auth: apiKey });
     let labels = await prepareDB(notionClient, repoName);
@@ -112,7 +131,6 @@ type PaginatedIssueResult = {
 }
 
 async function paginatedIssues(repoName: string, repoOwner: string, next: string | undefined): Promise<PaginatedIssueResult> {
-    const token = process.env.GITHUB_API_TOKEN;
     const response = await graphql({
         query: `
         query issues($repoName: String!, $repoOwner: String!, $before: String, $issuePagination: Int!, $labelCutoff: Int!, $commentCutoff: Int!, $assigneeCutoff: Int!) {
@@ -162,7 +180,7 @@ async function paginatedIssues(repoName: string, repoOwner: string, next: string
         commentCutoff: 100,
         assigneeCutoff: 50,
         headers: {
-            authorization: `token ${token}`
+            authorization: `token ${ghToken}`
         }
     }) as PaginatedRepositoryResponse;
     const paginator = response.repository.issues;

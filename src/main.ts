@@ -6,7 +6,15 @@ import { openIssue, prepareDB, setLabels } from "./notion";
 config();
 export const pageId = process.env.NOTION_PAGE_ID!;
 const apiKey = process.env.NOTION_API_KEY!;
-
+export const labelPropName = process.env.GH_LABEL_PROP_NAME ?? "Github Labels";
+export const linkPropName = process.env.GH_LINK_PROP_NAME ?? "Github Link";
+export const repoPropName = process.env.GH_LABEL_PROP_NAME ?? "Repository";
+export const assigneePropName = process.env.ASSIGNEE_PROP_NAME ?? "Assignees";
+export const boardColumnPropName = process.env.BOARD_COLUMN_PROP_NAME ?? "Status";
+export const boardColumnDefaultVal = process.env.BOARD_COLUMN_DEFAULT_VAL ?? "Backlog";
+export const boardColumnDoneVal = process.env.BOARD_COLUMN_DONE_VAL ?? "Done";
+export const ghNotionUserMap = JSON.parse(process.env.GITHUB_NOTION_USER_MAP ?? "");
+export const issueIcon = process.env.NOTION_ISSUE_ICON ?? "https://www.notion.so/images/external_integrations/github-icon.png";
 
 export type Username = string;
 export type LabelName = string;

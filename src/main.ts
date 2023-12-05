@@ -1,14 +1,32 @@
 import { graphql  } from "@octokit/graphql";
 import { config } from "dotenv";
+import { Client } from "@notionhq/client";
+import { openIssue, prepareDB, setLabels } from "./notion";
 
-config()
+config();
+export const pageId = process.env.NOTION_PAGE_ID!;
+const apiKey = process.env.NOTION_API_KEY!;
 
+
+export type Username = string;
+export type LabelName = string;
+export type Url = string;
+export type User = {
+    login: Username,
+    url: Url,
+}
+export type Comment = {
+    author: User,
+    body: string,
+    url: string,
+}
 export type Issue = {
     assignees: Username[],
     labels: LabelName[],
     body: string,
     title: string,
     isOpen: boolean,
+    url: Url,
     comments: Comment[],
 }
 
@@ -16,16 +34,31 @@ export async function run(): Promise<void> {
     const repoOwner = process.argv[2];
     const repoName = process.argv[3];
 
+    const notionClient = new Client({ auth: apiKey });
+    let labels = await prepareDB(notionClient, repoName);
+
     let next = undefined;
     while (true) {
         const paginatedResponse = await paginatedIssues(repoName, repoOwner, next);
         const issues = paginatedResponse.issues;
-        issues.forEach(issue => console.log(issue.title))
+        await updateLabels(notionClient, labels, issues);
+        issues.forEach(async issue => await openIssue(notionClient, issue, repoName))
         next = paginatedResponse.next;
         if (!next) {
             break;
         }
     }
+}
+
+async function updateLabels(notionClient: Client, labels: LabelName[], issues: Issue[]) {
+    issues.forEach(issue => {
+        issue.labels.forEach(issueLabel => {
+            if (!labels.find(label => issueLabel === label)) {
+                labels.push(issueLabel)
+            }
+        })
+    })
+    await setLabels(notionClient, labels);
 }
 
 type PaginatedRepositoryResponse = {
@@ -41,19 +74,6 @@ type PaginatedRepositoryResponse = {
         }
     }
 };
-
-type Username = string;
-type LabelName = string;
-type Url = string;
-type User = {
-    login: Username,
-    url: Url,
-}
-type Comment = {
-    author: User,
-    body: string,
-    url: string,
-}
 
 type IssueResponse = {
     assignees: { nodes: [{ login: Username }] }
@@ -72,6 +92,7 @@ function issue_from_issue_response(response: IssueResponse): Issue {
         body: response.body,
         title: response.title,
         isOpen: response.state == "OPEN",
+        url: response.url,
         comments: response.comments.nodes,
     };
     return ret;

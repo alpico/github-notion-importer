@@ -1,0 +1,27 @@
+{
+  "name": "github-notion-importer",
+  "version": "0.0.1",
+  "description": "Imports all issues from one repository into a notion database",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "aDogCalledSpot",
+  "license": "MIT",
+  "dependencies": {
+    "@notionhq/client": "^2.2.13",
+    "@octokit/graphql": "^7.0.2",
+    "@tryfabric/martian": "^1.2.4",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.1",
+    "@typescript-eslint/eslint-plugin": "^6.13.1",
+    "@typescript-eslint/parser": "^6.13.1",
+    "eslint": "^8.54.0",
+    "eslint-plugin-prettier": "^5.0.1",
+    "prettier": "^3.1.0",
+    "prettier-eslint": "^16.1.2",
+    "typescript": "^5.3.2"
+  }
+}

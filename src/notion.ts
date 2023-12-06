@@ -1,7 +1,8 @@
 import { Client } from "@notionhq/client"
-import { Issue, LabelName, pageId, ghNotionUserMap, labelPropName, linkPropName, repoPropName, assigneePropName, boardColumnDefaultVal, boardColumnDoneVal, issueIcon, boardColumnPropName } from "./main";
+import { Issue, LabelName, } from "./main";
 import { markdownToBlocks, markdownToRichText } from "@tryfabric/martian";
 import { BlockObjectRequest } from "@notionhq/client/build/src/api-endpoints";
+import { pageId, ghNotionUserMap, labelPropName, linkPropName, repoPropName, assigneePropName, boardColumnDefaultVal, boardColumnDoneVal, issueIcon, boardColumnPropName } from './config'
 
 export async function prepareDB(notion: Client, repoName: string): Promise<LabelName[]> {
     let { labels, repos } = await getChangingProperties(notion);

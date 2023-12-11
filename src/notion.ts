@@ -41,8 +41,10 @@ export async function openIssue(notion: Client, issue: Issue, repoName: string):
     if (exists) {
         console.log(`Skipping issue ${issue.title}`);
         return;
+    } else {
+        console.log(`Opening issue ${issue.title}`);
     }
-    const assignees = issue.assignees.map(login => ({ id: ghNotionUserMap[login] }))
+    const assignees = issue.assignees.map(login => ({ id: ghNotionUserMap[login] })) ?? {};
     const newPage = await notion.pages.create({
         parent: { database_id: pageId },
         "icon": { external: { url: issueIcon } },

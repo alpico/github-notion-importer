@@ -37,6 +37,11 @@ export async function setLabels(notion: Client, labels: LabelName[]): Promise<vo
 }
 
 export async function openIssue(notion: Client, issue: Issue, repoName: string): Promise<void> {
+    const exists = await issueExists(notion, issue);
+    if (exists) {
+        console.log(`Skipping issue ${issue.title}`);
+        return;
+    }
     const assignees = issue.assignees.map(login => ({ id: ghNotionUserMap[login] }))
     const newPage = await notion.pages.create({
         parent: { database_id: pageId },
@@ -60,6 +65,17 @@ export async function openIssue(notion: Client, issue: Issue, repoName: string):
             rich_text: markdownToRichText(header + comment.body),
         })
     }
+}
+
+async function issueExists(notion: Client, issue: Issue): Promise<boolean> {
+    const response = await notion.databases.query({
+        database_id: pageId,
+        filter: {
+            property: linkPropName,
+            url: { equals: issue.url }
+        }
+    })
+    return response.results.length !== 0;
 }
 
 type ChangingProperties = {

@@ -34,16 +34,20 @@ export async function run(): Promise<void> {
     if (!repoName) {
         throw new Error("Please enter your github repo's name");
     }
+    const relatedPage = process.argv[4];
+    if (!relatedPage) {
+        throw new Error("Please enter a page ID for where the issues related to this specific repo should be linked");
+    }
 
     const notionClient = new Client({ auth: apiKey });
-    let labels = await prepareDB(notionClient, repoName);
+    let labels = await prepareDB(notionClient);
 
     let next = undefined;
     while (true) {
         const paginatedResponse = await paginatedIssues(repoName, repoOwner, next);
         const issues = paginatedResponse.issues;
         await updateLabels(notionClient, labels, issues);
-        issues.forEach(async issue => await openIssue(notionClient, issue, repoName))
+        issues.forEach(async issue => await openIssue(notionClient, issue, relatedPage))
         next = paginatedResponse.next;
         if (!next) {
             break;

@@ -2,24 +2,19 @@ import { Client } from "@notionhq/client"
 import { Issue, LabelName, } from "./main";
 import { markdownToBlocks, markdownToRichText } from "@tryfabric/martian";
 import { BlockObjectRequest } from "@notionhq/client/build/src/api-endpoints";
-import { pageId, ghNotionUserMap, labelPropName, linkPropName, repoPropName, assigneePropName, boardColumnDefaultVal, boardColumnDoneVal, issueIcon, boardColumnPropName } from './config'
+import { pageId, ghNotionUserMap, labelPropName, linkPropName, assigneePropName, boardColumnDefaultVal, boardColumnDoneVal, issueIcon, boardColumnPropName, relationPropName } from './config'
 
-export async function prepareDB(notion: Client, repoName: string): Promise<LabelName[]> {
-    let { labels, repos } = await getChangingProperties(notion);
+export async function prepareDB(notion: Client): Promise<LabelName[]> {
+    let labels = await getLabels(notion);
 
-    if (repos.find((elem: string) => elem === repoName) === undefined) {
-        repos.push(repoName);
-    }
-    const repoOptions = repos.map(name => ({ name }));
     const labelOptions = labels.map(name => ({ name }));
 
     await notion.databases.update({
         database_id: pageId,
         properties: {
-            [repoPropName]: { select: { options: repoOptions } },
             [labelPropName]: { multi_select: { options: labelOptions } },
             [linkPropName]: { url: {}, },
-            [assigneePropName]: { people: {}, }
+            [assigneePropName]: { people: {}, },
         }
     });
     return labels;
@@ -36,7 +31,7 @@ export async function setLabels(notion: Client, labels: LabelName[]): Promise<vo
     });
 }
 
-export async function openIssue(notion: Client, issue: Issue, repoName: string): Promise<void> {
+export async function openIssue(notion: Client, issue: Issue, relatedPage: string): Promise<void> {
     const exists = await issueExists(notion, issue);
     if (exists) {
         console.log(`Skipping issue ${issue.title}`);
@@ -52,9 +47,9 @@ export async function openIssue(notion: Client, issue: Issue, repoName: string):
             "title": { title: [{ text: { content: issue.title } }] },
             [linkPropName]: { url: issue.url },
             [boardColumnPropName]: { status: { name: issue.isOpen ? boardColumnDefaultVal : boardColumnDoneVal } },
-            [repoPropName]: { select: { name: repoName } },
             [labelPropName]: { multi_select: issue.labels.map(name => ({ name })) },
             [assigneePropName]: { people: assignees },
+            [relationPropName]: { relation: [{id : relatedPage }] },
         },
         children: markdownToBlocks(issue.body) as Array<BlockObjectRequest>,
     });
@@ -80,16 +75,8 @@ async function issueExists(notion: Client, issue: Issue): Promise<boolean> {
     return response.results.length !== 0;
 }
 
-type ChangingProperties = {
-    labels: LabelName[],
-    repos: string[],
-}
-
-async function getChangingProperties(notion: Client): Promise<ChangingProperties> {
+async function getLabels(notion: Client): Promise<LabelName[]> {
     const response = await notion.databases.retrieve({ database_id: pageId });
     let labels = (response.properties[labelPropName] as any)?.multi_select?.options?.map((elem: any) => elem["name"]) ?? undefined;
-    let repos = (response.properties[repoPropName] as any)?.select?.options?.map((elem: any) => elem["name"]) ?? undefined;
-    repos = repos ? repos : [];
-    labels = labels ? labels : [];
-    return { labels, repos };
+    return labels ? labels : [];
 }

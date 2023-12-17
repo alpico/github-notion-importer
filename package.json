@@ -6,7 +6,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "format:write": "prettier --write **/*.ts",
-    "format:check": "prettier --check **/*.ts"
+    "format:check": "prettier --check **/*.ts",
+    "lint": "npx eslint . -c ./linters/.eslintrc.yml"
   },
   "author": "aDogCalledSpot",
   "license": "MIT",

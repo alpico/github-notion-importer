@@ -42,10 +42,10 @@ export async function run(): Promise<void> {
   }
 
   const notionClient = new Client({ auth: apiKey })
-  let labels = await prepareDB(notionClient)
+  const labels = await prepareDB(notionClient)
 
   let next = undefined
-  while (true) {
+  for (;;) {
     const paginatedResponse = await paginatedIssues(repoName, repoOwner, next)
     const issues = paginatedResponse.issues
     await updateLabels(notionClient, labels, issues)
@@ -63,7 +63,7 @@ async function updateLabels(
   notionClient: Client,
   labels: LabelName[],
   issues: Issue[]
-) {
+): Promise<void> {
   issues.forEach(issue => {
     issue.labels.forEach(issueLabel => {
       if (!labels.find(label => issueLabel === label)) {
@@ -123,7 +123,7 @@ async function paginatedIssues(
   repoOwner: string,
   next: string | undefined
 ): Promise<PaginatedIssueResult> {
-  const response = (await graphql({
+  const response: PaginatedRepositoryResponse = (await graphql({
     query: `
         query issues($repoName: String!, $repoOwner: String!, $before: String, $issuePagination: Int!, $labelCutoff: Int!, $commentCutoff: Int!, $assigneeCutoff: Int!) {
             repository(name: $repoName, owner: $repoOwner) {
@@ -174,7 +174,7 @@ async function paginatedIssues(
     headers: {
       authorization: `token ${ghToken}`
     }
-  })) as PaginatedRepositoryResponse
+  }))
   const paginator = response.repository.issues
   const issues = paginator.edges.map(issue =>
     issue_from_issue_response(issue.node)

@@ -16,7 +16,7 @@ import {
 } from './config'
 
 export async function prepareDB(notion: Client): Promise<LabelName[]> {
-  let labels = await getLabels(notion)
+  const labels = await getLabels(notion)
 
   const labelOptions = labels.map(name => ({ name }))
 
@@ -74,7 +74,7 @@ export async function openIssue(
       [assigneePropName]: { people: assignees },
       [relationPropName]: { relation: [{ id: relatedPage }] }
     },
-    children: markdownToBlocks(issue.body) as Array<BlockObjectRequest>
+    children: markdownToBlocks(issue.body) as BlockObjectRequest[]
   })
   const newPageId = newPage.id
   // Do this synchronously to get the right order
@@ -100,9 +100,11 @@ async function issueExists(notion: Client, issue: Issue): Promise<boolean> {
 
 async function getLabels(notion: Client): Promise<LabelName[]> {
   const response = await notion.databases.retrieve({ database_id: pageId })
-  let labels =
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  const labels =
     (response.properties[labelPropName] as any)?.multi_select?.options?.map(
       (elem: any) => elem['name']
     ) ?? undefined
+  /* eslint-enable */
   return labels ? labels : []
 }
